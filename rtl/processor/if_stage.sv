@@ -1,5 +1,6 @@
 `ifdef MODEL_TECH
 	`include "C:/Users/30698/Desktop/ErgAsk1-master/ErgAsk1-master/CompArchCourseDUTH/rtl/sys_defs.vh"
+	//`include "../sys_defs.vh"
 `endif
 
 module if_stage  (input logic 	      clk,             // system clk
