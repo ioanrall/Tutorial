@@ -1,9 +1,8 @@
 `ifdef MODEL_TECH
-	`include "C:/Users/30698/Desktop/ErgAsk1-master/ErgAsk1-master/CompArchCourseDUTH/rtl/sys_defs.vh"
-	//`include "../sys_defs.vh"
+	`include "../sys_defs.vh"
 `endif
 
-//Decoder  
+//Decoder
 
 module inst_decoder(
 input [31:0] 		inst,
@@ -196,13 +195,21 @@ logic[4:0] ra_idx;
 logic[4:0] rb_idx; 
 logic[4:0] rc_idx; 
 
-assign ra_idx=if_id_IR[19:15];	// inst operand A register index
-assign rb_idx=if_id_IR[24:20];	// inst operand B register index
-assign rc_idx=if_id_IR[11:7];  // inst operand C register index
+assign ra_idx=if_id_IR[19:15];	// inst operand rs1 register index
+assign rb_idx=if_id_IR[24:20];	// inst operand rs2 register index
+assign rc_idx=if_id_IR[11:7];  // inst operand rd register index
 // Instantiate the register file used by this pipeline
 
 logic write_en;
 assign write_en=mem_wb_valid_inst & mem_wb_reg_wr;
+
+
+
+
+
+
+
+
 
 regfile regf_0(.clk		(clk),
 			   .rst		(rst),

@@ -1,6 +1,5 @@
 `ifdef MODEL_TECH
-	`include "C:/Users/30698/Desktop/ErgAsk1-master/ErgAsk1-master/CompArchCourseDUTH/rtl/sys_defs.vh"
-	//`include "../sys_defs.vh"
+	`include "../sys_defs.vh"
 `endif
 
 module ex_stage(
@@ -9,6 +8,7 @@ input logic 		rst,               // system rst
 input logic [31:0]  id_ex_PC,            // PC
 input logic [31:0] 	id_ex_imm,
 input logic [31:0]  id_ex_rega,          // register A value from reg file
+
 input logic [31:0]  id_ex_regb,          // register B value from reg file
 input logic [1:0] 	id_ex_opa_select,    // opA mux select from decoder
 input logic [1:0] 	id_ex_opb_select,    // opB mux select from decoder
@@ -34,12 +34,47 @@ logic [31:0] br_cond_opa, br_cond_opb;
 logic [31:0] opa_mux_out, opb_mux_out;
 
 logic [31:0] alu_result;
+//////////////////////////////////////
+/*always_ff @(posedge clk) begin
+
+//forward
+if ((mem_wb_enable && mem_wb_dest_reg_idx!=0 && id_ex_IR[19:15] == mem_wb_dest_reg_idx && ~(ex_mem_enable && ex_mem_dest_reg_idx!=0 && id_ex_IR[19:15] == ex_mem_dest_reg_idx )) ||   (mem_wb_enable && mem_wb_dest_reg_idx!=0 && id_ex_IR[19:15] == mem_wb_dest_reg_idx && ~(ex_mem_enable && ex_mem_dest_reg_idx!=0 && id_ex_IR[24:20] == ex_mem_dest_reg_idx )) ) begin
+	 //  ex_alu_result_out      <=ex_mem_alu_result;
+     id_ex_opa_select= 2'b11
+end
+
+end
+/////////////////////////forward m-->ex
+logic mem_wb_enable;
+logic [4:0]	 	mem_wb_dest_reg_idx;
+logic [31:0] id_ex_IR;
+logic ex_mem_enable;
+logic [4:0]		ex_mem_dest_reg_idx;
+logic [31:0]	ex_mem_alu_result;
+
+processor processor_0 (.mem_wb_enable(mem_wb_enable),
+						.mem_wb_dest_reg_idx(mem_wb_dest_reg_idx),
+						.id_ex_IR(id_ex_IR),
+						.ex_mem_enable(ex_mem_enable),
+						.ex_mem_dest_reg_idx(ex_mem_dest_reg_idx),
+						.ex_mem_alu_result(ex_mem_alu_result)
+);
+
+always_comb begin
+ if ((mem_wb_enable && mem_wb_dest_reg_idx!=0 && id_ex_IR[19:15] == mem_wb_dest_reg_idx && ~(ex_mem_enable && ex_mem_dest_reg_idx!=0 && id_ex_IR[19:15] == ex_mem_dest_reg_idx )) ||   (mem_wb_enable && mem_wb_dest_reg_idx!=0 && id_ex_IR[19:15] == mem_wb_dest_reg_idx && ~(ex_mem_enable && ex_mem_dest_reg_idx!=0 && id_ex_IR[24:20] == ex_mem_dest_reg_idx )) ) begin
+	 //  ex_alu_result_out      <=ex_mem_alu_result;
+     id_ex_opa_select= 2'b11;
+end
+end
+*/
+
 
 always_comb begin : opA_mux
 	case (id_ex_opa_select)
 		`ALU_OPA_IS_PC:   opa_mux_out = id_ex_PC;
 		`ALU_OPA_IS_ZR:   opa_mux_out = 32'b0;
-		default:         opa_mux_out = id_ex_rega;
+		//2'b11:			 opa_mux_out=	ex_mem_alu_result; ///////////////////
+		 default:         opa_mux_out = id_ex_rega;
 	endcase
 end
 

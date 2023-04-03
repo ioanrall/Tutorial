@@ -1,6 +1,5 @@
 `ifdef MODEL_TECH
-	`include "C:/Users/30698/Desktop/ErgAsk1-master/ErgAsk1-master/CompArchCourseDUTH/rtl/sys_defs.vh"
-	//`include "../sys_defs.vh"
+	`include "../sys_defs.vh"
 `endif
 
 module if_stage  (input logic 	      clk,             // system clk
@@ -34,7 +33,8 @@ assign PC_plus_4 = PC_reg + 4;
 assign next_PC = (ex_take_branch_out) ? ex_target_PC_out : PC_plus_4;
 
 // stall PC
-assign PC_enable = if_valid_inst_out | ex_take_branch_out;
+assign PC_enable =1;// if_valid_inst_out | ex_take_branch_out;             // an 1 tote pipelined ----
+ //assign PC_enable= 
 
 // Pass PC down pipeline w/instruction
 assign if_PC_out = PC_reg;

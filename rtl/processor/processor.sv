@@ -1,6 +1,5 @@
 `ifdef MODEL_TECH
-	`include "C:/Users/30698/Desktop/ErgAsk1-master/ErgAsk1-master/CompArchCourseDUTH/rtl/sys_defs.vh"
-	//`include "../sys_defs.vh"
+	`include "../sys_defs.vh"
 `endif
 
 module processor(
@@ -12,7 +11,7 @@ module processor(
     output logic [31:0] pipeline_commit_NPC,
 	output logic        pipeline_commit_wr,
 	
-	input  logic[ 31:0] instruction,
+	input  logic [31:0] instruction,
 	output logic [31:0] pc_addr,
 	output logic [1:0]  im_command,
 
@@ -72,6 +71,7 @@ logic         	id_valid_inst_out;
 logic 			id_uncond_branch;
 logic 			id_cond_branch;
 logic [31:0]    id_pc_add_opa;
+//logic [31:0]    outidex;//buffer from if/id id/ex            //
 
 // Outputs from ID/EX Pipeline Register
 logic 			id_ex_reg_wr;
@@ -94,11 +94,12 @@ logic [31:0]    id_ex_pc_add_opa;
 logic [31:0] 	ex_target_PC_out;
 logic 			ex_take_branch_out;
 logic [31:0] 	ex_alu_result_out;
+//logic [31:0] 	outex;                                             //////////////
 
 // Outputs from EX/MEM Pipeline Register
 logic [2:0]		ex_mem_funct3;
 logic [4:0]		ex_mem_dest_reg_idx;
-logic      		ex_mem_rd_mem;
+logic      		ex_mem_rd_mem; 
 logic         	ex_mem_wr_mem;
 logic			ex_mem_reg_wr;
 logic      		ex_mem_illegal;
@@ -157,13 +158,21 @@ if_stage if_stage_0 (
 .proc2Imem_addr		(pc_addr),
 .if_valid_inst_out  (if_valid_inst_out)
 );
+/*
+always_comb begin
+if(ex_take_branch_out)
+if_IR_out=32'h00000013;
+end
+*/
 
+logic stall;      														//////////ALLAGH		
+logic zap;
 //////////////////////////////////////////////////
 //                                              //
 //            IF/ID Pipeline Register           //
 //                                              //
 //////////////////////////////////////////////////
-assign if_id_enable = 1;
+assign if_id_enable=(stall || zap)? 0:1;    //assign if_id_enable = 1;                         ///////ALLAGH
 
 always_ff @(posedge clk or posedge rst) begin
 	if(rst) begin
@@ -173,13 +182,33 @@ always_ff @(posedge clk or posedge rst) begin
         if_id_valid_inst <=  0;
     end 
     else if (if_id_enable) begin
-		if_id_PC         <=  if_PC_out;
-		if_id_NPC        <=  if_NPC_out;
+		//if_id_PC         <=  if_PC_out;        //if_id_PC sto zap θυμαται thn palia oy timi an kai o if_PC_out proxvraei gia enan kyklo/// mipos thelei na kollaei 2 kykloyw;;
+		if_id_NPC        <=  if_NPC_out;		//sto stall posa pc updaes na min epitrepontai;;
 		if_id_IR         <=  if_IR_out;
         if_id_valid_inst <= if_valid_inst_out;
     end 
 end 
 
+/////////////
+logic second_pc;
+logic [31:0] if_id_PC_2;
+always_ff@(posedge clk) begin
+  if(if_id_enable) begin
+	if_id_PC         <=  if_PC_out;
+  end
+  else if(~if_id_enable && zap) begin
+		second_pc<=1;
+		if_id_PC_2<=if_id_PC; 
+  end
+
+end
+
+always_ff@(posedge clk) begin
+ if (second_pc)  begin
+   if_id_PC<=if_id_PC_2;
+   second_pc<=0;
+ end
+end
    
 //////////////////////////////////////////////////
 //                                              //
@@ -216,13 +245,45 @@ id_stage id_stage_0 (
 .id_illegal_out			(id_illegal_out),
 .id_valid_inst_out		(id_valid_inst_out)
 );
+/*
+always_comb  begin
+	if(if_id_IR[19:15]!=0 && (if_id_IR[19:15]==id_ex_IR[11:7] && if_id_IR[19:15]==ex_mem_IR[11:7] && if_id_IR[19:15]==mem_wb_IR[11:7]) || if_id_IR[24:20]!=0 && (if_id_IR[24:20]==id_ex_IR[11:7] && if_id_IR[24:20]==ex_mem_IR[11:7] && if_id_IR[24:20]==mem_wb_IR[11:7])) begin
+	//if_id_enable = 0;
+	//id_ex_enable = 0;
+	outidex = 32'h00000015;
+end
+else if(ex_take_branch_out)begin
+outidex = 32'h00000013;
+end
+	else begin
+//if_id_enable = 1;
+//id_ex_enable =1;
+outidex = if_id_IR;
+	end
+end
+*/
+///////////////////////////stallllllllllllllllll/////////
+
+always_comb  begin
+	if ((if_id_IR[19:15]!=0 && (if_id_IR[19:15]==id_ex_IR[11:7] || if_id_IR[19:15]==ex_mem_IR[11:7] && if_id_IR[19:15]==mem_wb_IR[11:7])) || (if_id_IR[24:20]!=0 && (if_id_IR[24:20]==id_ex_IR[11:7] || if_id_IR[24:20]==ex_mem_IR[11:7] || if_id_IR[24:20]==mem_wb_IR[11:7]))) begin
+			stall=1'b1;
+			//line 175
+			//line 267   //den xero an prepei na perasw to noop sto ex ir
+			// line 323
+
+		end
+		else
+		stall=1'b0;
+end
+
+
 
 //////////////////////////////////////////////////
 //                                              //
 //            ID/EX Pipeline Register           //
 //                                              //
 //////////////////////////////////////////////////
-assign id_ex_enable =1; // disabled when HzDU initiates a stall
+assign id_ex_enable=(stall|| zap)? 0:1;     //assign id_ex_enable =1; // disabled when HzDU initiates a stall     //ALLAGH
 // synopsys sync_set_rst "rst"
 always_ff @(posedge clk or posedge rst) begin
 	if (rst) begin //sys_rst
@@ -263,7 +324,7 @@ always_ff @(posedge clk or posedge rst) begin
             id_ex_reg_wr        <=  id_reg_wr_out;
 			
 			id_ex_PC            <=  if_id_PC;
-			id_ex_IR            <=  if_id_IR;
+			//id_ex_IR            <=  if_id_IR;    //////////////////outidex;    //buffer from if/id to id/ex
 			id_ex_rega          <=  id_rega_out;
 			id_ex_regb          <=  id_regb_out;
 			id_ex_imm			<=  id_immediate_out;
@@ -276,6 +337,24 @@ always_ff @(posedge clk or posedge rst) begin
 		end // if
     end // else: !if(rst)
 end // always
+
+//dokimiii//
+logic second_zap;
+logic [31:0]	id_ex_IR_2;							
+always_ff@(posedge clk) begin
+if (id_ex_enable)
+	 id_ex_IR          <=  if_id_IR;                      //pcccccccc
+else
+	 id_ex_IR          <=  `NOOP_INST;
+	 second_zap<=1;
+	 id_ex_IR_2			<=  `NOOP_INST;
+end
+   always_ff@(posedge clk) begin
+   if (second_zap)  begin
+	second_zap<=0;
+	id_ex_IR<=id_ex_IR_2;
+   end
+   end
 
 //////////////////////////////////////////////////
 //                                              //
@@ -303,6 +382,30 @@ ex_stage ex_stage_0 (
 .ex_target_PC_out		(ex_target_PC_out),
 .ex_alu_result_out		(ex_alu_result_out)
 );
+
+/*
+always_comb begin
+if (ex_take_branch_out)begin
+outex = 32'h00000013;
+end
+else 
+outex = id_ex_IR;
+	end
+	*/
+//zap=flash
+always_comb begin
+if(ex_take_branch_out) begin
+  zap=1'b1;      //θελω 2 κυκλους  na stamataei o pc;;;;
+				//line 322  //stelnw noop sto ex/mem
+				//line 175  //clear IF/ID latch
+
+
+end
+else
+zap=1'b0;
+
+end
+
 
 //////////////////////////////////////////////////
 //                                              //
@@ -338,7 +441,7 @@ always_ff @(posedge clk or posedge rst) begin
 			ex_mem_valid_inst   <=  id_ex_valid_inst;
 		    ex_mem_reg_wr       <=  id_ex_reg_wr;
 		
-			ex_mem_IR           <=  id_ex_IR;
+			ex_mem_IR           <=  id_ex_IR;////////outex;
 			ex_mem_dest_reg_idx <=  id_ex_dest_reg_idx;
 			ex_mem_regb         <=  id_ex_regb;		
 			ex_mem_alu_result   <=  ex_alu_result_out;
@@ -348,7 +451,13 @@ always_ff @(posedge clk or posedge rst) begin
 		end // if
 	end // else: !if(rst)
 end // always
-
+//dokimi
+always_ff@(posedge clk) begin
+if (id_ex_enable)
+	 id_ex_IR          <=  if_id_IR; 
+else
+	 id_ex_IR          <=  `NOOP_INST;
+end
    
 //////////////////////////////////////////////////
 //                                              //

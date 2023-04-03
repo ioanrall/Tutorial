@@ -2,7 +2,6 @@
 
 ../processor/if_stage.sv
 ../processor/regfile.sv
-
 ../processor/id_stage.sv
 ../processor/ex_stage.sv
 ../processor/mem_stage.sv
