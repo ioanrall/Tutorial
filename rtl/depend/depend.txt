@@ -1,0 +1,34 @@
+.text
+.align 4
+.global fact
+fact: add x10,x0,1
+      add x11,x0,3
+      add x12,x0,1
+      add x13,x0,1
+      add x14,x0,3
+      add x15,x0,1
+      add x10,x11,x12
+	add x14,x14,x15   
+	sub x14,x15,x15    //raw
+jr ra
+
+//fakelo-fakelo
+.text
+.align 4
+.global fact, loop
+fact: add x10,x0,1
+      add x11,x0,3
+      add x12,x0,1
+      add x13,x0,1
+      add x14,x0,3
+      add x15,x0,1
+loop: add x10,x11,x12    //4//5//6
+	add x12,x12,1      //2//3//4
+	add x15,x15,1      //2//3//4
+	add x14,x14,x15   // 4//5//6
+	sub x11,x11,x10   //2//1//0
+	bne x11,x0, loop 
+	add x12,x0,8     
+	add x15,x0,8
+	add x14,x0,8
+jr ra
